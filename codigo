@@ -1,0 +1,393 @@
+from tkinter import Tk, Button, Frame, Label, Entry, Text, messagebox,Toplevel,StringVar,filedialog
+from tkinter import ttk
+import os
+from PIL import ImageTk, Image
+from os import remove,mkdir
+from tkcalendar import *
+from datetime import datetime,date
+import time
+ventana = Tk()
+ventana.title("Ejemplo Frames")
+width= ventana.winfo_screenwidth()
+height= ventana.winfo_screenheight()
+#ventana.geometry("540x240+0+0")
+ventana.state('zoomed')
+if os.path.isfile("Tareas.txt") == False:
+   file=open("Tareas.txt",'w')
+   file.close()
+if os.path.isdir('Imagenes')==False:
+   mkdir('Imagenes')
+file=open("Tareas.txt",'r')
+file.close()
+Imagen=None
+picture=None
+hoy=datetime.now()
+
+# def
+def cargar():
+    #Este segmento del codigo permite que el menu desplegable permita cargar la tarea,
+    # y en caso de no seleccionar una tarea valida sali un mensaje de advertencia
+    if combo.get() == 'Seleccione una:':
+        messagebox.showwarning("Advertencia","Por favor, Seleccione una opcion valida")
+    else:
+        Cargartarea()
+def guardar():
+    #En este segmento del codigo permite que con un solo boton pueda guardar las
+    #caracteristicas de cualquier tarea en el archivo txt
+    if combo.get()=='Seleccione una:':
+        messagebox.showwarning("Advertencia", "Por favor, Seleccione un elemento valido para guardar")
+    else:
+        nombre=combo.get()
+        i = '\n'
+        for i in nombre:
+            nombre = nombre.replace('\n', '')
+        file = open(nombre + ".txt", 'r')
+        titulo = file.readline()
+        fecha = file.readline()
+        descripcion = file.readline()
+        imagen=file.readline()
+        file.close()
+        file = open(nombre+".txt", 'w')
+        tx4.delete(0, 'end')
+        tx5.delete(0, 'end')
+        tx6.delete('1.0', 'end')
+        tarea = tx1.get()
+        fecha = str(cal.get_date())
+        descripcion = tx3.get('1.0', 'end')
+        #Este segmento permite que la descripcion pueda guardar lineas aparte en el
+        # archivo txt, codificando los elemento '\n', por caracteres especiales, mas
+        # adelante se descodifican para cargar los '\n' nuevamente
+        i = '\n'
+        for i in descripcion:
+            descripcion = descripcion.replace('\n', '#$%&/(')
+        #
+        file.write(tarea)
+        file.write('\n')
+        file.write(fecha)
+        file.write('\n')
+        file.write(descripcion)
+        file.write('\n'+imagen)
+        file.close()
+        tx4.insert(0, tarea)
+        tx5.insert(0, fecha)
+        i = '\n'
+        for i in descripcion:
+            descripcion = descripcion.replace('#$%&/(','\n' )       #Decodificacion de '\n'
+        tx6.insert('1.0', descripcion)
+def editar():
+    #Este segmento permite que al presionar "EDITAR" se copie la informacion del archivo de texto para poderse editar
+    #nuevamente y volver a guardarse.
+    nombre = combo.get()
+    i = '\n'
+    for i in nombre:
+        nombre = nombre.replace('\n', '')
+    file=open(nombre+'.txt','r')
+    titulo=file.readline()
+    fecha=file.readline()
+    descripcion=file.readline()
+    imagen=file.readline()
+    file.close()
+    file = open(nombre + ".txt",'r')
+    tx1.delete(0, 'end')
+    tx2.delete(0, 'end')
+    tx3.delete('1.0', 'end')
+    linea1 = str(file.readline())
+    i='\n'
+    for i in linea1:
+        linea1 = linea1.replace('\n', '')
+    tx1.insert(0, linea1)
+    linea2 = str(file.readline())
+    for i in linea2:
+        linea2 = linea2.replace('\n', '')
+    #Esta parte es para establecer la fecha seleccionada para poderla editar
+    string = linea2
+    s=time.mktime(datetime.strptime(string,
+                                                 "%Y-%m-%d").timetuple())
+    dt_object = datetime.fromtimestamp(s)
+    print(dt_object)
+    cal.set_date(dt_object)
+    linea3 = str(file.readline())
+    for i in linea3:
+        linea3=linea3.replace('\n', '')
+    for i in linea3:
+        linea3 = linea3.replace('#$%&/(', '\n')
+    tx3.insert('1.0', linea3)
+    file.close()
+def NuevoElemento():
+   #Este segmento se divide en dos partes, la primera es la creacion de una ventana que permita que el usuario cree
+    #una nueva tarea, en este caso, en caso de que ya exista un archivo repetido sale una advertencia
+    win = Toplevel()
+    win.geometry("350x250+0+0")
+    def nuevoArchivo():
+        #la segunda es la creacion de una funcion que permita avisar si el nombre esta repetido, y en caso de
+        # que NO sea asi tome el nombre que se le quiere agregar, le añada .txt para crear un archivo de texto,
+        # y el nombre de la tarea lo añada a la lista del menu desplegable.
+        nombre2 = Entrada.get()
+        if os.path.isfile(nombre2 + ".txt") == True:
+            messagebox.showwarning("Advertencia", "El archivo ya existe")
+        else:
+            file = open(nombre2 + '.txt', 'w')
+            file.write('\n'+str(date.today())+'\n'+'\n'+'404.jpg')
+            Entrada.delete(0, 'end')
+            combo['values']+=(nombre2,)
+            file2=open("Tareas.txt",'a')
+            file2.write(nombre2+'\n')
+            win.destroy()
+
+    etiNueva=Label(win, text="Ingrese el nombre de la nueva tarea:")
+    etiNueva.place(relx=.1, rely=.05,relwidth=.8,relheight=.06)
+    Entrada=Entry(win)
+    Entrada.place(relx=.2, rely=.25,relwidth=.6,relheight=.1)
+    Aceptar=Button(win,text="Aceptar",command=nuevoArchivo)
+    Aceptar.place(relx=.2, rely=.55,relwidth=.25,relheight=.1)
+    Cancelar = Button(win, text="Cancelar",command=win.destroy)
+    Cancelar.place(relx=.55, rely=.55, relwidth=.25, relheight=.1)
+def actualizarcombo():
+    combo['values']=('Seleccione una:',)
+    with open('Tareas.txt') as f:
+        lineas = int(sum(1 for _ in f))
+        i = 0
+        if i < lineas:
+            file = open("Tareas.txt", 'r')
+            for i in range(lineas):
+                a = file.readline()
+                combo['values'] += (a,)
+def eliminar():
+#En esta funcion lo primero que hacemos es identificar que se seleccione un elemento valido para eliminar
+
+    if combo.get()=="Seleccione una:":
+        messagebox.showwarning("Advertencia", "Por favor, Seleccione un elemento valido para eliminar")
+    else:
+        mycwd=os.getcwd()
+        os.chdir(mycwd)
+        '''luego leemos y guardamos todas las lineas del archivo Tareas.txt, luego para evitar errores,
+        despues abrimos el archivo en modo escritura y vamos mirando si las lineas tienen el nombre igual 
+        al del combobox, si no es asi las escribimos de nuevo,pero si si, la eliminamos'''
+        nombre = combo.get()
+        i = '\n'
+        for i in nombre:
+            nombre = nombre.replace('\n', '')
+        file=open(nombre+'.txt','r')
+        titulo = file.readline()
+        fecha = file.readline()
+        descripcion = file.readline()
+        imagen=file.readline()
+        file.close()
+        os.chdir('Imagenes')
+        if imagen!=('404.jpg'):
+            remove(imagen)
+        my_pic = Image.open('404.jpg')
+        # redimensionar
+        resized = my_pic.resize((300, 225), Image.ANTIALIAS)
+        imagen = ImageTk.PhotoImage(resized)
+        lbImagen = Label(frame2, image=imagen).place(relx=.2, rely=.7, width=325, height=200)
+        os.chdir('..')
+        print(os.getcwd())
+        f=open("Tareas.txt",'r')
+        lines=f.readlines()
+        f.close()
+        f = open("Tareas.txt", 'w')
+        for line in lines:
+            i = '\n'
+            for i in line:
+                line = line.replace('\n', '')
+            if line == nombre:
+                f.write('')
+            else:
+                f.write(line+'\n')
+        #despues ponemos el combobox en la primera opcion, "Seleccione una:"
+        combo.current(0)
+        f.close()
+        #actualizamos las opciones para que ya no aparezca la eliminada, y eliminamos el texto de los cuadros de texto
+        actualizarcombo()
+        tx4.delete(0, 'end')
+        tx5.delete(0, 'end')
+        tx6.delete('1.0', 'end')
+        #por ultimo eliminamos el archivo de esa tarea
+        remove(nombre+'.txt')
+def abrirArchivo():
+    nombre = combo.get()
+    i = '\n'
+    for i in nombre:
+        nombre = nombre.replace('\n', '')
+    mycwd=os.getcwd()
+    def guardartxt():
+        os.chdir(mycwd)
+        file=open(nombre+'.txt','r')
+        titulo=file.readline()
+        fecha=file.readline()
+        descripcion=file.readline()
+        file.seek(0)
+        lineas=file.readlines()
+        file.close()
+        print(titulo,fecha,descripcion)
+        file=open(nombre+'.txt','w')
+        file.write(titulo)
+        file.write(fecha)
+        file.write(descripcion)
+        file.write(archivo_guardado)
+    if combo.get() == 'Seleccione una:':
+        messagebox.showwarning("Advertencia","Por favor, Seleccione una opcion valida antes de cargar la imagen")
+    else:
+        #Seleccionar imagen
+        global imagen
+        global archivo_abierto
+        os.chdir(mycwd)
+        archivo_abierto = filedialog.askopenfilename(initialdir="/",
+                      title="Seleccione archivo", filetypes=(("png files", ".png"),("all files", ".*")))
+        print(archivo_abierto)
+        #Mostrar imagen
+        if (archivo_abierto):
+            #abrir imagen
+            my_pic = Image.open(archivo_abierto)
+            #redimensionar
+            resized=my_pic.resize((300,225),Image.ANTIALIAS)
+            imagen = ImageTk.PhotoImage(resized)
+            lbImagen = Label(frame2, image=imagen).place(relx=.2, rely=.7,width=325,height=200)
+        if archivo_abierto:
+            file = open(nombre + '.txt', 'r')
+            titulo = file.readline()
+            fecha = file.readline()
+            descripcion = file.readline()
+            photo = file.readline()
+            file.close()
+            os.chdir('Imagenes')
+            #if imagen != ('404.jpg'):
+            #remove(photo)
+            archivo_guardado = os.path.join((os.getcwd()), os.path.split(archivo_abierto)[1])
+            with open(archivo_abierto, 'rb') as abierto:
+                with open(archivo_guardado, 'wb') as guardado:
+                    guardado.write(abierto.read())
+            os.chdir('..')
+            guardartxt()
+def Cargartarea():
+    #Esta parte del codigo permite cargar la tarea seleccionada del menu desplegable al presionar el boton cargar
+    #Esto se hace obteniendo el nombre del menu, agragandole un .txt y leyendo las lineas del archivo en orden
+    global picture
+    mycwd = os.getcwd()
+    nombre=combo.get()
+    i = '\n'
+    for i in nombre:
+        nombre = nombre.replace('\n', '')
+    file = open(nombre + '.txt', 'a')
+    file.write('\n'+'404.jpg')
+    file.close()
+    file = open(nombre+".txt",'r')
+    tx1.delete(0, 'end')
+    tx2.delete(0, 'end')
+    tx3.delete('1.0', 'end')
+    tx4.delete(0, 'end')
+    tx5.delete(0, 'end')
+    tx6.delete('1.0', 'end')
+    linea1 = file.readline()
+    tx4.insert(0, linea1)
+    linea2 = file.readline()
+    tx5.insert(0, linea2)
+    linea3 = file.readline()
+    for i in linea3:
+        linea3 = linea3.replace('#$%&/(', '\n')
+    tx6.insert('1.0', linea3)
+    for i in linea3:
+        linea3 = linea3.replace('\n','#$%&/(')
+    linea4=file.readline()
+    for i in linea4:
+        linea4 = linea4.replace('\n','')
+    file.close()
+    # abrir imagen
+    print(linea4)
+
+    os.chdir('Imagenes')
+    my_pic = Image.open(linea4)
+    # redimensionar
+    resized = my_pic.resize((300, 225), Image.ANTIALIAS)
+    picture = ImageTk.PhotoImage(resized)
+    lbImagen = Label(frame2, image=picture).place(relx=.2, rely=.7, width=325, height=200)
+    os.chdir('..')
+    file = open(nombre + ".txt", 'w')
+    file.write(linea1)
+    file.write(linea2)
+    file.write(linea3)
+    file.write('\n'+linea4)
+    print(os.getcwd())
+# objetos
+#Frames
+frame1 = Frame(ventana, bg="green")
+frame1.pack(expand=True, fill='both')
+frame1.place(relx=0, rely=0, relwidth=.5, relheight=1)
+
+frame2 = Frame(ventana, bg="blue")
+frame2.pack(expand=True, fill='both')
+frame2.place(relx=.5, rely=0, relwidth=.5, relheight=1)
+
+#Combobox
+'''Este segmento tiene varias partes:
+La primera es la creacion del menu desplegable, este se llama "Combobox" ademas de eso de establece que
+ la unica opcion fija sea "Seleccione una:", ademas se estipula que no se pueda modificar el texto del
+ combobox y sea solo de lectura'''
+var=StringVar(frame2)
+opciones=("Seleccione una:",)
+combo = ttk.Combobox(frame2,textvariable=var,state="readonly")
+combo['values'] = (opciones)
+'''La segunda parte consta de la lectura de las tareas existentes, los nombres de las tareas se guardan en
+un archivo .txt, llamado "Tareas.txt", esto se hace para permitir que el programa abra el archivo, lea los nombres
+de las tareas, los añada uno a uno a las opciones del combobox, esto para permitir que sin importar
+que el programa se cierre las tareas se guarden en el combobox, esto se hace con la funcion actualizarcombo()'''
+actualizarcombo()
+# Por ultimo se estipula que las opciones del combobox sea seleccionada la primera por defecto,
+# y se añade el boton de cargar la tarea
+combo.current(0)
+CargarTarea = Button(frame2, text="Cargar", command=cargar)
+CargarTarea.place(relx=.67, rely=.02, relwidth=.3, relheight=.1)
+
+#Botones
+NuevaTarea = Button(frame1, text="NUEVA TAREA",command=NuevoElemento)
+BotonGuardar = Button(frame1, text="GUARDAR", fg="black", command=guardar)
+Editar=Button(frame1, text="EDITAR",command=editar)
+Eliminar=Button(frame2,text="ELIMINAR TAREA",command=eliminar)
+ImagenTarea = Button(frame1, text="SUBIR IMAGEN",command=abrirArchivo)
+
+#Entradas de texto
+tx1 = Entry(frame1, bg="white")
+tx2 = Entry(frame1, bg="white")
+tx3 = Text(frame1, bg="white")
+tx4 = Entry(frame2, bg="white")
+tx5 = Entry(frame2, bg="white")
+tx6 = Text(frame2, bg="white")
+
+#etiquetas
+lb1 = Label(frame1, text="Ingrese su tarea")
+lb2 = Label(frame1, text="Ingrese la fecha")
+lb3 = Label(frame1, text="Ingrese una descripcion de su tarea")
+my_pic = Image.open("escudo.png")
+resized = my_pic.resize((150, 150), Image.ANTIALIAS)
+picture = ImageTk.PhotoImage(resized)
+lbImagen = Label(frame1, image=picture).place(relx=.05, rely=.75, width=150, height=150)
+
+
+#Calendario creacion
+dia=hoy.day
+mes=hoy.month
+ano=hoy.year
+cal = DateEntry(frame1, width=12, background='darkblue',
+                foreground='white', borderwidth=2, year=ano)
+cal.place(relx=.05, rely=.27, relwidth=.60, relheight=.1)
+#posicionamiento
+lb1.place(relx=.05, rely=.02, relwidth=.60, relheight=.05)
+lb2.place(relx=.05, rely=.22, relwidth=.60, relheight=.05)
+lb3.place(relx=.03, rely=.42, relwidth=.63, relheight=.05)
+
+tx1.place(relx=.05, rely=.07, relwidth=.60, relheight=.1)
+tx3.place(relx=.05, rely=.47, relwidth=.60, relheight=.2)
+tx3.config(padx=15, pady=15)
+tx4.place(relx=.05, rely=.15, relwidth=.60, relheight=.1)
+tx5.place(relx=.05, rely=.30, relwidth=.60, relheight=.1)
+tx6.place(relx=.05, rely=.45, relwidth=.60, relheight=.2)
+
+combo.place(relx=.05,rely=.02, relwidth=.60, relheight=.1)
+
+NuevaTarea.place(relx=.70, rely=.07, relwidth=.25, relheight=.1)
+BotonGuardar.place(relx=.70, rely=.37, relwidth=.25, relheight=.1)
+Editar.place(relx=.70, rely=.22, relwidth=.25, relheight=.1)
+Eliminar.place(relx=.67, rely=.15, relwidth=.3, relheight=.1)
+ImagenTarea.place(relx=.70, rely=.52,relwidth=.25, relheight=.1)
+ventana.mainloop()
